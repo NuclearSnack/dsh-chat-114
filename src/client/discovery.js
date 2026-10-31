@@ -361,7 +361,7 @@
         : statusKind === "updated" ? colors.warn
           : statusKind === "imported" ? colors.success
             : colors.dimmer;
-      const statusText = statusKind === "tombstone" ? "之前导入过、后来被删（撤回）——想导就再导一次"
+      const statusText = statusKind === "tombstone" ? "之前导入过，后来在 DSH 里归档了（或所在工作区被删）——想重导就再导"
         : statusKind === "updated" ? "源有新内容（再导一次可增量追加）"
           : statusKind === "imported" ? "已导入"
             : "未导入";
