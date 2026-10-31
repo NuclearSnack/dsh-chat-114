@@ -142,7 +142,7 @@ DSH 自己的会话（V3 / V4）**默认不显示**。需要的话在来源筛�
 
 > 只需要原版功能的话，请装上游的 [`dsh-chat-import`](https://github.com/Nwflower/dsh-chat-import)。
 
-dsh-chat-import 的 README.md :
+dsh-chat-import 的 README.md（原件存档，未作改动）：[English](docs/upstream/README.md) ｜ [简体中文](docs/upstream/README.zh-CN.md)
 
 ## 许可
 

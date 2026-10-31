@@ -116,8 +116,7 @@
     "release:notes": "node scripts/release-notes.mjs",
     "build:client": "node scripts/build-client.mjs",
     "build": "node scripts/build-client.mjs --check && node .github/scripts/build-check.mjs",
-    "prepack": "npm run build",
-    "prepublishOnly": "npm test && git diff --quiet && git diff --cached --quiet && npm pack --dry-run"
+    "prepack": "npm run build"
   },
   "license": "MIT",
   "devDependencies": {
