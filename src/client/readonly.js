@@ -63,16 +63,13 @@
       }
     }
 
-    /** 拉一次只读映射并重设全部 block；面板导入新会话后调用即可增量生效。 */
+    /** 拉一次只读映射并重设全部 block；面板导入新会话后调用即可增量生效。
+     *  走 utils.js 的 postJson（统一请求头与响应解析），不自己手写 fetch——
+     *  bundle 里只留一处请求出口，测试也按这个约定守着。 */
     async function refreshReadonly(conversation) {
       try {
-        const resp = await fetch(READONLY_MAP_URL, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: "{}",
-        });
-        if (!resp || !resp.ok) return;
-        const data = await resp.json();
+        const { ok, data } = await postJson(READONLY_MAP_URL, {});
+        if (!ok) return;
         readonlyInfo.clear();
         readonlyApplied.clear();
         const sessions = (data && data.sessions) || {};
@@ -101,7 +98,9 @@
 
     /** 输入框上方的只读横幅：只在导入会话里出现，其余会话完全不渲染。 */
     function ReadonlyBanner(props) {
-      const { sessionId, onFork, t } = props;
+      // 文案暂为内置中文（本横幅的读者是同一个用户，先按界面语言默认中文处理）；
+      // 接 i18n 需要把 LOCALE_NS 透到分片里，属于后续打磨项，不在这里顺手改。
+      const { sessionId, onFork } = props;
       const info = useReadonlyInfo(sessionId);
       if (!info) return null;
       const label = readonlyLabel(info.format);

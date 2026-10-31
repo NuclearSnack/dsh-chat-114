@@ -23,11 +23,13 @@
       return h(LogoIcon, { size });
     }
 
-    const SETTINGS_NAV_MARKER = "data-dsh-chat-import-settings-nav";
-    const SETTINGS_NAV_STYLE_ID = "dsh-chat-import-settings-nav-style";
+    const SETTINGS_NAV_MARKER = "data-dsh-chat-114-settings-nav";
+    const SETTINGS_NAV_STYLE_ID = "dsh-chat-114-settings-nav-style";
     /** 本插件在宿主客户端模块系统里的 entry 名（= package.json name = lib/client.js 里
-     *  `__ModuleLoader__.load({ id })` 的那个 id），也是宿主给样式表记账用的包名。 */
-    const PLUGIN_ID = "dsh-chat-import";
+     *  `__ModuleLoader__.load({ id })` 的那个 id），也是宿主给样式表记账用的包名。
+     *  fork 改名后这里必须一起改：宿主按 entry 名记账样式表，值对不上会把自己的样式表
+     *  记到旧的包名名下，重载时认不回来。 */
+    const PLUGIN_ID = "dsh-chat-114";
     /** 本插件自己那张样式表的唯一键（宿主官方前端包同款写法）：重载后靠它认回自己那一张。 */
     const SETTINGS_NAV_PLUGIN_CSS = PLUGIN_ID + "/settings-nav.css";
     /** 别人留下的无标记样式表被挪到这个值上：它不是任何包的 entry 名，因此宿主的认领扫描

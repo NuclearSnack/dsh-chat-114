@@ -36,6 +36,7 @@ test('面板路由：全部 exact 注册在 /api-import/ 下', () => {
   assert.deepEqual(routes.map((r) => r.path).sort(), [
     '/api-import/delete-source', '/api-import/file', '/api-import/hide', '/api-import/history',
     '/api-import/import', '/api-import/prefs', '/api-import/preview', '/api-import/purge',
+    '/api-import/readonly-map',
     '/api-import/search', '/api-import/sessions', '/api-import/unhide', '/api-import/upload/chunk',
     '/api-import/upload/complete', '/api-import/upload/init', '/api-import/uploads',
     '/api-import/workspaces/cleanup',

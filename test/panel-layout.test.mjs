@@ -96,7 +96,9 @@ test('选择区只剩一行（来源 + 落点），无分隔线（组边界由�
 test('选择区一行读完：来源下拉 → 连接词「导入到」→ 落点下拉；工作区筛选在筛选层', () => {
   const body = panelBody()
   const selects = [...body.matchAll(/SearchableSelect/g)].map((m) => m.index)
-  assert.equal(selects.length, 4, '面板应有来源 / 落点 / 路径筛选 / 时间筛选四个下拉')
+  // 6 个：来源 / 落点 / 路径筛选 / 时间筛选 / 来源多选筛选 / 排序字段
+  //（后两个是 fork 新增的筛选层控件，与路径、时间同排在同一行）
+  assert.equal(selects.length, 6, '面板应有来源 / 落点 / 路径 / 时间 / 来源多选 / 排序六个下拉')
   const joins = [...body.matchAll(/style\.rowJoin/g)].map((m) => m.index)
   assert.equal(joins.length, 2, '本行有两个连接词：「从」与「导入到」')
   assert.ok(joins[0] < selects[0], '「从」应排在来源下拉之前')
@@ -164,7 +166,10 @@ test('会话行：多选入口是整行（role=checkbox + 键盘切换），工�
   assert.notEqual(badgeAt, -1, '行内应仍渲染来源工具标')
   const badge = row.slice(badgeAt, row.indexOf('}),', badgeAt))
   assert.ok(!/onClick/.test(badge), '工具标不应再接收点击（勾选入口已移到消息体）')
-  assert.ok(badge.includes('checked,'), '工具标仍应显示选中态')
+  // 勾选态已从徽标里拆出来独立渲染：徽标恒以未选中态画，选中由行首那个小方框表达。
+  // 此前 checked 画在徽标上（overlay + 对勾），勾中后整块被盖住、分不清是哪家 harness。
+  assert.ok(!/checked: checked/.test(badge), '工具标不再承担选中态（已拆成独立勾选框）')
+  assert.ok(badge.includes('checked: false'), '工具标恒以未选中态渲染')
 
   // 行内按钮在可勾选容器内部 → 必须拦住冒泡，否则「点导入」会顺带勾上这一行
   const slotAt = row.indexOf('style.rowSlot')

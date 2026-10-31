@@ -133,7 +133,7 @@ test('本插件自己那张样式表带归属标记，不被 style:not([data-plu
   assert.equal(style.dataset.pluginCss, mod.SETTINGS_NAV_PLUGIN_CSS, '要带自己的 data-plugin-css 键')
   assert.equal(unclaimedByHostSelector(style), false, '不得被宿主的认领扫描命中')
   assert.equal(style.parentNode, document.head, '挂在 <head> 上')
-  assert.match(style.textContent, /\[data-dsh-chat-import-settings-nav\]::before/, '遮罩 CSS 要写上')
+  assert.match(style.textContent, /\[data-dsh-chat-114-settings-nav\]::before/, '遮罩 CSS 要写上')
   assert.match(style.textContent, /-webkit-mask: url\("data:image\/svg\+xml,/, '遮罩走插件 logo 的 data URI')
   // 宿主物化这次不会认领任何东西：文档里没有未打标签的样式表
   hostClaimStyles(document, mod.PLUGIN_ID)
@@ -143,7 +143,7 @@ test('本插件自己那张样式表带归属标记，不被 style:not([data-plu
 test('既有元素（旧版本留下的无标记元素 / 上次建的那张）按 id 认回并补标记，不新建第二张', () => {
   const document = createFakeDom()
   const legacy = document.createElement('style')
-  legacy.id = 'dsh-chat-import-settings-nav-style'
+  legacy.id = 'dsh-chat-114-settings-nav-style'
   document.head.appendChild(legacy)
   const mod = loadStyleModule(document)
   // 模块作用域的 parkForeignSheets 放它一马（认 id），免得它被写成外来值
