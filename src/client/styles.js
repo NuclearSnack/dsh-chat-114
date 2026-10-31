@@ -23,6 +23,9 @@
       success: "var(--dsw-alias-state-success-primary)",
       warn: "var(--dsw-alias-state-warn-primary)",
       error: "var(--dsw-alias-state-error-primary)",
+      // 墓碑紫：DSH 的设计令牌里没有"紫色状态"这一档（只有 success/warn/error），
+      // 而墓碑既不是错误也不是警告，是「这里动过、撤回了」的历史痕迹，只能自定一个。
+      tombstone: "#8b5cf6",
     });
 
     // 面板样式表：C 是配色（COLORS）。只在下面算一次得到 STYLES，各组件共用同一份引用。

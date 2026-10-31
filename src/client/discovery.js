@@ -349,20 +349,22 @@
         background: hot ? colors.hover : "transparent",
         cursor: importing ? "default" : "pointer",
       };
-      // 导入状态三态：未导入（灰）/ 已导入（绿）/ 源有新内容（橙）。
-      // hasUpdate 由宿主侧比对 registry 指纹给出；字段缺席时退化成两态，不会误报。
-      const importStatus = s.importStatus;
-      // partial = multi 源（zcode/opencode 等一库多会话）里「这个源已有**别的**会话被导入，
-      // 但本条没有」——对**本条**来说就是未导入，画绿色会让人以为它已经能点了。
-      // 只有 imported（真导入了）与 archived（导入后被归档）算已导入。
-      const importedAlready = importStatus === "imported" || importStatus === "archived";
-      const statusKind = s.hasUpdate ? "updated" : importedAlready ? "imported" : "notImported";
-      const statusColor = statusKind === "updated" ? colors.warn
-        : statusKind === "imported" ? colors.success
-          : colors.dimmer;
-      const statusText = statusKind === "updated" ? "源有新内容（再导一次可增量追加）"
-        : statusKind === "imported" ? "已导入"
-          : "未导入";
+      // 导入状态四态，按「先看墓碑、再看是否已导、再看源有没有新内容」定优先级：
+      //   紫 = 墓碑（之前导入过、后来被删/撤回，registry 里留着 retracted 记录）
+      //   橙 = 已导入但源里有新内容
+      //   绿 = 已导入
+      //   灰 = 未导入
+      // partial 不算已导入：它是「同一个 multi 源里别的会话导过了、本条没有」，
+      // 对**本条**而言就是没导过，画绿色会让人以为点进去能聊。
+      const statusKind = statusKey(s);
+      const statusColor = statusKind === "tombstone" ? colors.tombstone
+        : statusKind === "updated" ? colors.warn
+          : statusKind === "imported" ? colors.success
+            : colors.dimmer;
+      const statusText = statusKind === "tombstone" ? "之前导入过、后来被删（撤回）——想导就再导一次"
+        : statusKind === "updated" ? "源有新内容（再导一次可增量追加）"
+          : statusKind === "imported" ? "已导入"
+            : "未导入";
       return h("div", {
         style: rowStyle,
         title: tip,
@@ -484,6 +486,48 @@
             }, on ? "✓" : ""),
             sourceLabel(o.key),
             h("span", { style: { opacity: 0.7 } }, "(" + o.count + ")"));
+        }));
+    }
+
+    /** 导入状态筛选：四态各一个 chip，圆点颜色与行内状态点一致，可多选。 */
+    function StatusFilterBar(props) {
+      const { t, statusFilters, onToggleStatus, importing } = props;
+      const dotOf = {
+        notImported: COLORS.dimmer,
+        imported: COLORS.success,
+        updated: COLORS.warn,
+        tombstone: COLORS.tombstone,
+      };
+      return h("div", {
+        style: {
+          display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "0 10px 6px",
+        },
+      },
+        h("span", { style: { color: COLORS.dimmer, fontSize: "11px", marginRight: "2px" } }, t("filter.status")),
+        STATUS_KINDS.map((k) => {
+          const on = statusFilters.has(k);
+          return h("button", {
+            key: k,
+            type: "button",
+            disabled: importing,
+            onClick: () => onToggleStatus(k),
+            title: (on ? "取消勾选 " : "勾选 ") + t("status." + k),
+            style: {
+              display: "inline-flex", alignItems: "center", gap: "4px",
+              padding: "2px 8px", borderRadius: "999px", cursor: importing ? "default" : "pointer",
+              fontSize: "11px", lineHeight: "16px",
+              border: "1px solid " + (on ? COLORS.accent : COLORS.border),
+              background: on ? COLORS.accent : "transparent",
+              color: on ? COLORS.accentForeground : COLORS.dim,
+            },
+          },
+            h("span", {
+              style: {
+                width: "7px", height: "7px", borderRadius: "50%",
+                background: dotOf[k], display: "inline-block",
+              },
+            }),
+            t("status." + k));
         }));
     }
 
@@ -706,6 +750,15 @@
         });
         setPage(0);
       }, []);
+      const [statusFilters, setStatusFilters] = useState(() => new Set()); // 空集 = 不限状态（四态多选）
+      const toggleStatus = useCallback((key) => {
+        setStatusFilters((prev) => {
+          const next = new Set(prev);
+          if (next.has(key)) next.delete(key); else next.add(key);
+          return next;
+        });
+        setPage(0);
+      }, []);
       const [sortKey, setSortKey] = useState(SORT_KEYS[0]); // active = 最后活跃时间
       const [sortDesc, setSortDesc] = useState(true); // 默认降序（最近的在最前）
       const [selected, setSelected] = useState(new Map()); // key → 会话条目
@@ -739,7 +792,7 @@
       useEffect(() => { if (listEl) listEl.scrollTop = 0; }, [listEl, page, pageSize]);
       // 来源/搜索词/工作区变化 → 清空跨页选择（换页/刷新保留选择，支持跨页多选）。
       // 排序变化不清选择：只是行的先后变了，选中集合本身没变。
-      useEffect(() => { setSelected(new Map()); }, [source, query, workspaceFilter, timeFilter, formatFilters]);
+      useEffect(() => { setSelected(new Map()); }, [source, query, workspaceFilter, timeFilter, formatFilters, statusFilters]);
 
       // 显式选了 DSH 来源与 DSH 目标且**代次不同**（V3 ↔ V4）→ 底部多一个「导入所选并
       // 归档旧会话」按钮：导入按目标代次建新会话，同时把源会话在宿主里归档（迁移的收尾）。
@@ -865,10 +918,10 @@
       const contentHits = contentMode && contentText ? search.hits : null;
       const filteredItems = useMemo(() => {
         const base = filterByTime(
-          filterByFormat(filterByWorkspace(items, workspaceFilter), formatFilters),
+          filterByStatus(filterByFormat(filterByWorkspace(items, workspaceFilter), formatFilters), statusFilters),
           timeFilter, Date.now());
         return contentHits ? base.filter((s) => contentHits.has(itemKey(s))) : base;
-      }, [items, workspaceFilter, formatFilters, timeFilter, contentHits]);
+      }, [items, workspaceFilter, formatFilters, statusFilters, timeFilter, contentHits]);
       const allRows = pageSize === ALL_PAGE_SIZE;
       const totalPages = allRows ? 1 : Math.max(1, Math.ceil(filteredItems.length / pageSize));
       // 当前页窗口 = 工作区筛选后的缓冲切片（服务端不再分页；翻页零重扫）；「全部」档不分页
@@ -991,6 +1044,9 @@
           h(FormatFilterBar, {
             t, importing, formatOptions, formatFilters,
             onToggleFormat: toggleFormat,
+          }),
+          h(StatusFilterBar, {
+            t, importing, statusFilters, onToggleStatus: toggleStatus,
           }),
           // 还没拿到第一批数据：居中显示连接提示（拿到数据后状态就交给底部那条）
           !stream.started && !error && h("div", { style: style.status }, t("scan.hint.start")),
