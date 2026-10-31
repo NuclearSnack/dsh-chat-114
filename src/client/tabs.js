@@ -187,7 +187,7 @@
      *  当标签。弹层是同一套二级弹层口径：12px 圆角容器、30px 行高、6px 行圆角、品牌标 +
      *  名称 + 当前项末尾 ✓，顶部保留搜索框（自动聚焦）。替代原生 <select>：来源 / 目标 /
      *  工作区选项多时既好看也能检索。受控组件：value + onChange；点击外部 / Esc 关闭。 */
-    function SearchableSelect({ value, options, onChange, disabled, title, colors, searchPlaceholder, noMatchLabel, searchable = true, triggerLabel }) {
+    function SearchableSelect({ value, options, onChange, disabled, title, colors, searchPlaceholder, noMatchLabel, searchable = true, triggerLabel, multi = false }) {
       const style = STYLES;
       const [open, setOpen] = useState(false);
       const [filter, setFilter] = useState("");
@@ -234,7 +234,18 @@
       const shown = !needle ? options : options.filter((o) =>
         String(o.label).toLowerCase().includes(needle) || String(o.value).toLowerCase().includes(needle)
         || String(o.sub || "").toLowerCase().includes(needle));
-      const pick = (v) => { onChange(v); setOpen(false); setFilter(""); };
+      const pick = (v) => {
+        if (multi) {
+          // 多选：点一项只切换该项，不关闭弹层（要继续勾下一条）；由父级把选中集合算好传回。
+          onChange(v);
+          return;
+        }
+        onChange(v); setOpen(false); setFilter("");
+      };
+      // 多选时 value 是 Set；单选是标量。两者共用同一套行渲染。
+      const isPicked = (v) => (multi
+        ? (value instanceof Set ? value.has(v) : false)
+        : v === value);
       const lit = open || (hot && !disabled); // 背景矩形：hover 或展开时出现
       return h("div", { ref: rootRef, style: style.selectRoot, title },
         h("button", {
@@ -282,15 +293,19 @@
               // 来源行画品牌锁标（mark + 字标，整块替换名称文本）；没有官方品牌标、或该下拉
               // 没开锁标（导入目标 / 工作区）的行保持「槽位 + 文本」
               const lockup = o.lockup === true && o.mark ? sourceLogo(o.mark) : null;
+              const picked = isPicked(o.value);
               return h("button", {
-                key: o.value, type: "button", role: "option", "aria-selected": o.value === value,
+                key: o.value, type: "button", role: "option", "aria-selected": picked,
                 onClick: () => pick(o.value),
                 onMouseEnter: () => setHover(o.value),
                 onMouseLeave: () => setHover((cur) => (cur === o.value ? null : cur)),
                 style: {
                   ...style.selectRow,
-                  fontWeight: o.value === value ? 500 : 400,
+                  fontWeight: picked ? 500 : 400,
                   background: hover === o.value ? colors.hover : "transparent",
+                  ...(o.divider === true
+                    ? { marginTop: "6px", borderTop: "1px solid " + colors.border, paddingTop: "6px" }
+                    : null),
                 },
               },
                 lockup
@@ -303,6 +318,6 @@
                     h("span", { style: style.selectRowText }, o.label)),
               o.sub ? h("span", { style: style.selectRowSub, title: o.sub }, o.sub) : null,
               h("span", { style: style.selectCheck },
-                o.value === value ? h(Icon, { name: "check", size: 13 }) : null));
+                picked ? h(Icon, { name: "check", size: 13 }) : null));
             }))));
     }

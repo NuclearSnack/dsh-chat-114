@@ -444,51 +444,6 @@
       && a.onToggle === b.onToggle && a.onImport === b.onImport && a.onHot === b.onHot
       && a.terms === b.terms && a.hit === b.hit && a.hitLabel === b.hitLabel);
 
-    /** 一个工作区分组：组头（点击折叠 / 展开）+ 窗口化的会话行（区间见 windowRange）。组头与
-     *  皮肤一致——悬停（或组内有行点亮：groupLit）时文字变亮并露出折叠箭头，不浮背景矩形
-     *  （它是标题不是目标）；组头自己的悬停是本组件的局部状态，不惊动整个面板。 */
-    /** 来源多选条：每个 harness 一个勾选框 + 该 harness 下的对话数，按数量降序。
-     *  只列当前扫描结果里真实出现过的来源（没数据的 harness 不占位置）。
-     *  单独占一行：和动作按钮挤在工具栏里会互相吃宽度。 */
-    function FormatFilterBar(props) {
-      const { t, formatOptions, formatFilters, onToggleFormat, importing } = props;
-      if (!formatOptions || formatOptions.length === 0) return null;
-      return h("div", {
-        style: {
-          display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px",
-          padding: "0 10px 6px",
-        },
-      },
-        h("span", { style: { color: COLORS.dimmer, fontSize: "11px", marginRight: "2px" } }, t("filter.format")),
-        formatOptions.map((o) => {
-          const on = formatFilters.has(o.key);
-          return h("button", {
-            key: o.key,
-            type: "button",
-            disabled: importing,
-            onClick: () => onToggleFormat(o.key),
-            title: (on ? "取消勾选 " : "勾选 ") + sourceLabel(o.key) + "（" + o.count + " 条）",
-            style: {
-              display: "inline-flex", alignItems: "center", gap: "4px",
-              padding: "2px 8px", borderRadius: "999px", cursor: importing ? "default" : "pointer",
-              fontSize: "11px", lineHeight: "16px",
-              border: "1px solid " + (on ? COLORS.accent : COLORS.border),
-              background: on ? COLORS.accent : "transparent",
-              color: on ? COLORS.accentForeground : COLORS.dim,
-            },
-          },
-            h("span", {
-              style: {
-                width: "10px", height: "10px", borderRadius: "2px",
-                border: "1px solid currentColor", display: "inline-block",
-                textAlign: "center", lineHeight: "9px", fontSize: "9px",
-              },
-            }, on ? "✓" : ""),
-            sourceLabel(o.key),
-            h("span", { style: { opacity: 0.7 } }, "(" + o.count + ")"));
-        }));
-    }
-
     /** 导入状态筛选：四态各一个 chip，圆点颜色与行内状态点一致，可多选。 */
     function StatusFilterBar(props) {
       const { t, statusFilters, onToggleStatus, importing } = props;
@@ -531,6 +486,9 @@
         }));
     }
 
+    /** 一个工作区分组：组头（点击折叠 / 展开）+ 窗口化的会话行（区间见 windowRange）。组头与
+     *  皮肤一致——悬停（或组内有行点亮：groupLit）时文字变亮并露出折叠箭头，不浮背景矩形
+     *  （它是标题不是目标）；组头自己的悬停是本组件的局部状态，不惊动整个面板。 */
     function SessionGroup(props) {
       const { entry, win, t, importing, selected, badgeOverlay, isCollapsed, hotKey, groupLit, onCollapse, onToggle, onImport, onHot } = props;
       const { terms, hits, tools } = props;
@@ -605,6 +563,7 @@
     function DiscoveryToolbar(props) {
       const { t, narrow, importing, allSelected, hasSelection, canSelectAll, hasItems, onToggleAll, onClearSelection, onRefresh } = props;
       const { workspaceFilter, workspaceOptions, onWorkspaceFilter, timeFilter, onTimeFilter } = props;
+      const { formatFilters, formatOptions, onToggleFormat } = props;
       const { sortKey, sortDesc, onSortKey, onToggleSortDesc } = props;
       const style = STYLES;
       const [toolsRef, toolsWidth] = useContainerWidth();
@@ -662,6 +621,24 @@
             disabled: !hasItems || importing,
             options: TIME_FILTERS.map((v) => ({ value: v, label: t("filter.time." + (v || "all")) })),
             onChange: onTimeFilter,
+          })),
+        // 「筛选：来源」：与路径/时间同款的勾选型下拉（multi）。点一项只切换该项、弹层不关，
+        // 方便连着勾几条。DSH 自家格式（dsh/dsh4）由 buildFormatOptions 排到最后，
+        // 并在第一项前画分割线——它们不是「外部聊天记录」，混在数量排序里只会干扰视线。
+        h("span", { style: style.filterGroup },
+          h(SearchableSelect, {
+            value: formatFilters, multi: true, title: t("filter.format"), colors: COLORS,
+            searchable: false,
+            triggerLabel: formatFilters && formatFilters.size > 0
+              ? t("filter.format") + " · " + formatFilters.size
+              : t("filter.format"),
+            disabled: !hasItems || importing || formatOptions.length === 0,
+            options: formatOptions.map((o) => ({
+              value: o.key,
+              label: sourceLabel(o.key) + " (" + o.count + ")",
+              ...(o.divider === true ? { divider: true } : {}),
+            })),
+            onChange: onToggleFormat,
           })),
         // 排序：先选字段，再用右侧方向按钮切升降序；相等项按原始顺序回退，
         // 所以来回点两次一定回到原顺序（不漂移）。
@@ -1040,10 +1017,7 @@
             sortKey, sortDesc,
             onSortKey: (v) => { setSortKey(v); setPage(0); },
             onToggleSortDesc: () => setSortDesc((d) => !d),
-          }),
-          h(FormatFilterBar, {
-            t, importing, formatOptions, formatFilters,
-            onToggleFormat: toggleFormat,
+            formatFilters, formatOptions, onToggleFormat: toggleFormat,
           }),
           h(StatusFilterBar, {
             t, importing, statusFilters, onToggleStatus: toggleStatus,
