@@ -239,7 +239,7 @@
       );
       ctx.slots.inject("plugins.bundle.config", () =>
         ctx.slots.register(
-          { name: "plugins.bundle.config", key: "dsh-chat-import", label: settingsLabel },
+          { name: "plugins.bundle.config", key: "dsh-chat-114", label: settingsLabel },
           ImportSettingsSection,
         ));
       ctx.slots.inject("settings.section", () => {

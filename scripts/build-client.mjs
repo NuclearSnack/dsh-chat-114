@@ -64,7 +64,7 @@ export const HEADER = `/* global window, document, fetch, getComputedStyle, Muta
  //
  // GENERATED FILE — 勿手改。源在 src/client/ 分片，node scripts/build-client.mjs 组装。
 window.__ModuleLoader__.load({
-  id: "dsh-chat-import",
+  id: "dsh-chat-114",
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;
