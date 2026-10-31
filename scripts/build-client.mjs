@@ -46,6 +46,7 @@ export const FRAGMENTS = [
   'widgets.js',   // Icon / SourceBadge / useContainerWidth
   'styles.js',    // COLORS + makeStyles → STYLES（DSW 设计令牌，模块级常量）
   'toast.js',     // ToastHost（官方 shell.overlay 落点提示；缺 primitives 时自绘横幅）
+  'readonly.js',  // 导入会话只读锁（conversation.blocks）+ 分叉横幅（依赖 styles/sources/toast）
   'utils.js',     // fmt* / 结果摘要 / 响应解析 worker / postJson 请求出口 / Toggle
   'settings.js',  // 设置页「会话导入」分区 + 同步设置
   'tabs.js',      // ImportTabContent / SidebarImportTab / HistoryPanel / SearchableSelect

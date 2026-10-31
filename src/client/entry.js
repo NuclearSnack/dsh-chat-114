@@ -237,6 +237,10 @@
         () => registerSettingsNavIcon(settingsLabel),
         "dsh-chat-import: settings navigation icon",
       );
+      // 导入会话永久只读：输入框锁死 + 灰字显示来源，续聊走原生分叉（readonly.js）。
+      // 槽与服务的注册都在 installReadonly 内部各自降级，任何一步失败都不影响本插件的
+      // 其余部分（面板 / 设置 / footer 按钮）。
+      installReadonly(ctx);
       ctx.slots.inject("plugins.bundle.config", () =>
         ctx.slots.register(
           { name: "plugins.bundle.config", key: "dsh-chat-114", label: settingsLabel },
