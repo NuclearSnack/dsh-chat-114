@@ -8,7 +8,7 @@
 
 [![license](https://img.shields.io/badge/license-MIT-2EA44F?style=flat)](LICENSE)
 [![fork of](https://img.shields.io/badge/fork%20of-dsh--chat--import-8957e5?style=flat)](https://github.com/Nwflower/dsh-chat-import)
-[![platform](https://img.shields.io/badge/platform-DSH%20Web-4D6BFE?style=flat)](#安装)
+[![platform](https://img.shields.io/badge/platform-DSH%20Web-4D6BFE?style=flat)](#安装--installation)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.13-43853D?style=flat)](https://nodejs.org)
 
 </div>
@@ -17,8 +17,7 @@
 
 ---
 
-## 简介
-
+## 简介 / Introduction
 现在各家 AI 能力迭代飞快，经常免不了在不同 Harness 之间交替使用。还有是像作者这样的穷人，为了蹭点token经常在不同Harness之间捡免费额度用。而相同思路的多个对话内容分散在不同 Harness 之间难以整理就很烦。所以用源仓库[DSH Chat Import]改造得到这个插件。把各家的对话记录移到最方便的 DSH 中进行管理。
 
 114 取“电话热线：查询电话本”意，在 DSH 中找到自己上次聊的对话在哪里后便可以想起来去哪里继续。
@@ -41,8 +40,7 @@ What it does:
 3. Imported sessions are read-only by default. To keep talking, use "fork session" so DSH opens a fresh conversation you can type in.
 4. A few quality-of-life touches: better filters and search, multi-select, and import/archive status markers.
 
-## 安装
-
+## 安装 / Installation
 > 还没发到 npm。
 
 用这条命令装：
@@ -61,10 +59,8 @@ Restart DSH afterwards — an "Import sessions" entry shows up in the right side
 
 **Do not install this alongside the original `dsh-chat-import`.** Both register the same panel slots and the same plugin entry, so they will almost certainly collide.
 
-## 使用
-
-### 导入
-
+## 使用 / Usage
+### 导入 / Import
 1. 打开右侧栏「导入会话」，面板会自动扫描本机数据源。
 2. 用顶部四个控件收窄范围：**路径**（工作区）、**时间**、**来源**（可多选，带各来源条数）、**排序**。
 3. 每行最左边有个状态点：灰=未导入、绿=已导入、橙=源里有新内容、紫=已归档。
@@ -79,8 +75,7 @@ Restart DSH afterwards — an "Import sessions" entry shows up in the right side
 
 Imports are **grouped by workspace path**: a conversation lands in the DSH workspace with the same directory, and a new workspace is created if there isn't one.
 
-### 导入之后
-
+### 导入之后 / After import
 导入的会话是**只读**的。输入框会锁住，灰色占位文字写着「此对话来源于 <来源>·<日期>」。
 
 想接着聊，点输入框上方横幅的**「分叉后继续对话」**（等同 DSH 原生的「分叉会话」）。DSH 会新建一个会话，那里可以正常对话，原对话保持只读。
@@ -89,8 +84,7 @@ Imported sessions are **read-only**. The input box is locked, and the grey place
 
 To continue, click **"分叉后继续对话"** on the banner above the input box — same thing as DSH's native "fork session". DSH opens a new conversation you can type in normally, while the original stays read-only.
 
-### 删除与归档
-
+### 删除与归档 / Delete & archive
 - **删除**导入的会话不会留任何记录。下次扫描它回到「未导入」，想重导随时可以。
 - **归档**的会话显示紫点。点它的导入按钮会先取消归档、再走导入，所以看到紫点不用担心。如果它原来挂的工作区被删了，导入时还会顺手把工作区重建出来。
 
@@ -98,8 +92,7 @@ To continue, click **"分叉后继续对话"** on the banner above the input box
 
 **Archived** sessions show a purple dot. Clicking their import button un-archives them first, then imports — so there's nothing to worry about. If the workspace they belonged to was deleted, it gets recreated along the way.
 
-## 支持的数据源
-
+## 支持的数据源 / Supported sources
 > 支持的数据源直接粘贴原仓库的数据源表格。另对CodeX和ZCode数据源进行了一些调整。
 
 This table is copied straight from the upstream repo. Codex and ZCode have some adjustments.
@@ -159,14 +152,12 @@ DSH 自己的会话（V3 / V4）**默认不显示**。需要的话在来源筛�
 
 DSH's own sessions (V3 / V4) are **hidden by default**. Tick them in the source filter if you need them — they always sit at the end, behind a divider.
 
-### 关于 Codex 的压缩包
-
+### 关于 Codex 的压缩包 / Codex .zst
 原版只认没压缩过的 `.jsonl`，而新版 Codex CLI 默认把 rollout 写成 `.zst`。本机实测 212 个 rollout 里 189 个是压缩件（占 89%），原版一个都扫不到。这一版补上了，所以 Codex 那边能看到的会话比原版多好几倍。
 
 The original only reads uncompressed `.jsonl`, but newer Codex CLIs write rollouts as `.zst`. On the author's machine, 189 of 212 rollouts were compressed (89%) — the original couldn't see a single one of them. This fork reads them, so you get several times more Codex conversations.
 
-## 和上游的关系
-
+## 和上游的关系 / Relationship to upstream
 这个项目是 [Nwflower](https://github.com/Nwflower) 的 [dsh-chat-import](https://github.com/Nwflower/dsh-chat-import) 的 fork。33 种格式的解析、导入管线、面板骨架都是原作者写的，这部分功劳完全归他。这里改动的是下面这张表：
 
 | 改动 | 说明 |
@@ -191,8 +182,7 @@ If you only need the original features, install upstream's [`dsh-chat-import`](h
 
 The upstream repo's promo banner, i.e. what the original looks like.
 
-## 许可
-
+## 许可 / License
 [MIT](LICENSE)。原作者的版权声明完整保留。
 
 [MIT](LICENSE). The original author's copyright notice is kept intact.
