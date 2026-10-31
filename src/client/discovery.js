@@ -25,9 +25,10 @@
     const groupLatest = (list) => list.reduce((m, s) => Math.max(m, s.lastActiveAt ?? s.createdAt ?? 0), 0);
 
     /** 按工作区文件夹（project）分组 → [{ name, list }]：组按组内最新会话的最后编辑时间降序
-     *  （最近活跃的工作区置顶，时间并列按工作区名升序稳定），组内按最后编辑时间降序；未分组
-     *  钉最后。 */
-    function groupSessions(sessions) {
+     *  （最近活跃的工作区置顶，时间并列按工作区名升序稳定），未分组钉最后。
+     *  **组内**排序由 sortKey / sortDesc 决定（用户选择的排序只作用于组内，组的顺序仍是
+     *  「最近活跃的工作区在前」——排序是为了在大量会话里找到那一行，不是为了把工作区拆散）。 */
+    function groupSessions(sessions, sortKey, sortDesc) {
       const out = [];
       if (!sessions || sessions.length === 0) return out;
       const byProject = new Map();
@@ -41,7 +42,15 @@
         if (b === NO_WORKSPACE_KEY) return -1;
         return (groupLatest(byProject.get(b)) - groupLatest(byProject.get(a))) || a.localeCompare(b);
       });
-      for (const name of names) out.push({ name, list: [...byProject.get(name)].sort(byTimeDesc) });
+      for (const name of names) {
+        const inner = byProject.get(name);
+        out.push({
+          name,
+          list: sortKey === undefined
+            ? [...inner].sort(byTimeDesc)
+            : sortSessions(inner, sortKey, sortDesc !== false),
+        });
+      }
       return out;
     }
 
@@ -473,6 +482,7 @@
     function DiscoveryToolbar(props) {
       const { t, narrow, importing, allSelected, hasSelection, canSelectAll, hasItems, onToggleAll, onClearSelection, onRefresh } = props;
       const { workspaceFilter, workspaceOptions, onWorkspaceFilter, timeFilter, onTimeFilter } = props;
+      const { formatFilter, formatOptions, onFormatFilter, sortKey, sortDesc, onSortKey, onToggleSortDesc } = props;
       const style = STYLES;
       const [toolsRef, toolsWidth] = useContainerWidth();
       const [toolsProbeRef, toolsNeed] = useContainerWidth();
@@ -529,7 +539,41 @@
             disabled: !hasItems || importing,
             options: TIME_FILTERS.map((v) => ({ value: v, label: t("filter.time." + (v || "all")) })),
             onChange: onTimeFilter,
-          })));
+          })),
+        // 「筛选：来源」：只列当前结果里真实出现过的 harness（不列硬编码的 33 种空档），
+        // 选项后带条数，方便一眼看出哪个来源数据多。
+        h("span", { style: style.filterGroup },
+          h(SearchableSelect, {
+            value: formatFilter, title: t("filter.format"), colors: COLORS,
+            searchable: false,
+            triggerLabel: formatFilter
+              ? t("filter.format") + " · " + sourceLabel(formatFilter)
+              : t("filter.format"),
+            disabled: !hasItems || importing || formatOptions.length === 0,
+            options: [{ value: "", label: t("filter.all") }].concat(
+              formatOptions.map((o) => ({ value: o.key, label: sourceLabel(o.key) + " (" + o.count + ")" }))),
+            onChange: onFormatFilter,
+          })),
+        // 排序：先选字段，再用右侧方向按钮切升降序；相等项按原始顺序回退，
+        // 所以来回点两次一定回到原顺序（不漂移）。
+        h("span", { style: style.filterGroup },
+          h(SearchableSelect, {
+            value: sortKey, title: t("filter.sort"), colors: COLORS,
+            searchable: false,
+            triggerLabel: t("filter.sort") + " · " + t("sort." + sortKey) + (sortDesc ? " ↓" : " ↑"),
+            disabled: !hasItems || importing,
+            options: SORT_KEYS.map((k) => ({ value: k, label: t("sort." + k) })),
+            onChange: onSortKey,
+          })),
+        h("span", { style: style.filterGroup },
+          h("button", {
+            type: "button",
+            title: sortDesc ? t("sort.desc") : t("sort.asc"),
+            "aria-label": sortDesc ? t("sort.desc") : t("sort.asc"),
+            onClick: onToggleSortDesc,
+            disabled: !hasItems || importing,
+            style: style.toolBtn,
+          }, sortDesc ? "↓" : "↑")));
     }
 
     /** 底栏：翻页（只留图标、不套框；页码由页控件承担，点开是网格；只有一页时整组不显示）+
@@ -588,6 +632,9 @@
       const [target, setTarget] = useState("");
       const [workspaceFilter, setWorkspaceFilter] = useState("");
       const [timeFilter, setTimeFilter] = useState(TIME_FILTERS[0]); // '' = 不筛选
+      const [formatFilter, setFormatFilter] = useState(""); // '' = 全部来源
+      const [sortKey, setSortKey] = useState(SORT_KEYS[0]); // active = 最后活跃时间
+      const [sortDesc, setSortDesc] = useState(true); // 默认降序（最近的在最前）
       const [selected, setSelected] = useState(new Map()); // key → 会话条目
       const [importing, setImporting] = useState(false);
       const [result, setResult] = useState(null);
@@ -617,8 +664,9 @@
       const [setListEl, win, listEl] = useListWindow();
       // 换页 / 改每页条数 → 回到列表顶部（否则从第 3 屏切到新页会停在半空）
       useEffect(() => { if (listEl) listEl.scrollTop = 0; }, [listEl, page, pageSize]);
-      // 来源/搜索词/工作区变化 → 清空跨页选择（换页/刷新保留选择，支持跨页多选）
-      useEffect(() => { setSelected(new Map()); }, [source, query, workspaceFilter, timeFilter]);
+      // 来源/搜索词/工作区变化 → 清空跨页选择（换页/刷新保留选择，支持跨页多选）。
+      // 排序变化不清选择：只是行的先后变了，选中集合本身没变。
+      useEffect(() => { setSelected(new Map()); }, [source, query, workspaceFilter, timeFilter, formatFilter]);
 
       // 显式选了 DSH 来源与 DSH 目标且**代次不同**（V3 ↔ V4）→ 底部多一个「导入所选并
       // 归档旧会话」按钮：导入按目标代次建新会话，同时把源会话在宿主里归档（迁移的收尾）。
@@ -740,12 +788,14 @@
 
       // 以下派生数据全部 memo：悬停 / 勾选引起的重渲染（每行一次）不再重算过滤、分组、排序。
       // 大档位（几百上千行）时这一步才是真正的热点。
-      // 路径筛选（工作区）+ 时间筛选（最后活跃/创建时间落在窗口内）叠加
+      // 路径筛选（工作区）+ 来源筛选（harness）+ 时间筛选（最后活跃/创建时间落在窗口内）叠加
       const contentHits = contentMode && contentText ? search.hits : null;
       const filteredItems = useMemo(() => {
-        const base = filterByTime(filterByWorkspace(items, workspaceFilter), timeFilter, Date.now());
+        const base = filterByTime(
+          filterByFormat(filterByWorkspace(items, workspaceFilter), formatFilter),
+          timeFilter, Date.now());
         return contentHits ? base.filter((s) => contentHits.has(itemKey(s))) : base;
-      }, [items, workspaceFilter, timeFilter, contentHits]);
+      }, [items, workspaceFilter, formatFilter, timeFilter, contentHits]);
       const allRows = pageSize === ALL_PAGE_SIZE;
       const totalPages = allRows ? 1 : Math.max(1, Math.ceil(filteredItems.length / pageSize));
       // 当前页窗口 = 工作区筛选后的缓冲切片（服务端不再分页；翻页零重扫）；「全部」档不分页
@@ -754,6 +804,9 @@
         [filteredItems, page, pageSize, allRows],
       );
       const workspaceOptions = useMemo(() => buildWorkspaceOptions(items), [items]);
+      // 来源下拉的选项只从「全部扫描结果」算（不受当前筛选影响）：否则一旦按 Codex 筛过，
+      // Claude 的选项就会消失，用户没法切回去。
+      const formatOptions = useMemo(() => buildFormatOptions(items), [items]);
       // 分页文案总数：筛选后的缓冲条数（扫描中即已发现数）
       const displayTotal = filteredItems.length;
       // 底部一条的状态文案：扫描中报进度，扫描完成报总数（合并掉原来列表上方那条独立状态行）
@@ -766,7 +819,7 @@
             ? t("search.content.progress", { scanned: search.scanned, total: search.total, n: displayTotal })
             : t("search.content.done", { n: displayTotal }))
           : t("count.total", { n: displayTotal });
-      const groups = useMemo(() => groupSessions(sessions), [sessions]);
+      const groups = useMemo(() => groupSessions(sessions, sortKey, sortDesc), [sessions, sortKey, sortDesc]);
       // 有来源扫描失败（库被锁 / 无权限 / 读取器异常）：其余来源照常列出，只在列表上方点名，
       // 免得「没扫到」看起来像「没有会话」
       const scanNotice = useMemo(() => scanWarningNotice(warnings, t, sourceLabel), [warnings, t]);
@@ -858,6 +911,11 @@
             onWorkspaceFilter: (v) => { setWorkspaceFilter(v); setPage(0); },
             timeFilter,
             onTimeFilter: (v) => { setTimeFilter(v); setPage(0); },
+            formatFilter, formatOptions,
+            onFormatFilter: (v) => { setFormatFilter(v); setPage(0); },
+            sortKey, sortDesc,
+            onSortKey: (v) => { setSortKey(v); setPage(0); },
+            onToggleSortDesc: () => setSortDesc((d) => !d),
           }),
           // 还没拿到第一批数据：居中显示连接提示（拿到数据后状态就交给底部那条）
           !stream.started && !error && h("div", { style: style.status }, t("scan.hint.start")),
