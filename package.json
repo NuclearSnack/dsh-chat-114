@@ -1,13 +1,13 @@
 {
   "name": "dsh-chat-114",
-  "description": "Import conversation history from 25+ AI coding agents into DeepSeek Harness as resumable sessions — tool calls, reasoning and results kept intact, with reverse export. | 把 25+ AI 编程 Agent 的聊天记录导入 DeepSeek Harness 继续对话，保留工具调用、推理与结果，支持反向导出。",
-  "version": "0.26.3",
+  "description": "把各家 AI 编程工具的对话记录导入 DeepSeek Harness 的会话导入插件（dsh-chat-import 的 fork）。新增 Codex .zst 支持、导入会话只读与分叉续聊。 | Import conversation history from other AI coding agents into DeepSeek Harness. A fork of dsh-chat-import with Codex .zst support, read-only imports and fork-to-continue.",
+  "version": "0.27.0",
   "type": "module",
   "main": "./lib/index.mjs",
   "types": "./lib/index.d.ts",
   "icon": "assets/import.svg",
   "bin": {
-    "dsh-chat-import": "bin/dsh-chat-import.mjs"
+    "dsh-chat-114": "bin/dsh-chat-import.mjs"
   },
   "exports": {
     ".": {
@@ -34,7 +34,6 @@
     "bin",
     "cordis.patch.yml",
     "README.md",
-    "README.zh-CN.md",
     "docs/*.md",
     "docs/*.png",
     "CHANGELOG.md",
@@ -63,6 +62,8 @@
     "react": ">=18.0.0"
   },
   "keywords": [
+    "dsh-chat-114",
+    "fork",
     "deepseek-harness",
     "dsh-plugin",
     "dsh",
@@ -93,13 +94,13 @@
     "transcript"
   ],
   "author": "Nwflower <1679659@qq.com>",
-  "homepage": "https://github.com/Nwflower/dsh-chat-import",
+  "homepage": "https://github.com/NuclearSnack/dsh-chat-114",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Nwflower/dsh-chat-import.git"
+    "url": "git+https://github.com/NuclearSnack/dsh-chat-114.git"
   },
   "bugs": {
-    "url": "https://github.com/Nwflower/dsh-chat-import/issues"
+    "url": "https://github.com/NuclearSnack/dsh-chat-114/issues"
   },
   "engines": {
     "node": ">=22.13"

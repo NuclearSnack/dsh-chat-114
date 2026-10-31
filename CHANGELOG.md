@@ -1,6 +1,38 @@
 # Changelog
 
-All notable changes to `dsh-chat-import` are documented here, newest first.
+All notable changes to this project are documented here, newest first. Versions up to `0.26.3` come from upstream [`dsh-chat-import`](https://github.com/Nwflower/dsh-chat-import); `0.27.0` is the first release of this fork.
+
+## [0.27.0] - 2026-10-31
+
+[中文](#cn-0.27.0) | [English](#en-0.27.0)
+
+<h3 id="cn-0.27.0">新增功能</h3>
+
+- **基于上游 `0.26.3`**：这是本 fork 的首个版本，以下为相对上游的改动。
+
+- **Codex 压缩 rollout**：支持 `.zst`（原版只认未压缩 `.jsonl`），本机实测 212 个 rollout 中 189 个为压缩件。
+- **导入会话永久只读**：用 DSH 官方 `conversation.blocks` 锁住输入框，占位文字标注来源与日期；续聊走原生分叉。
+- **来源多选筛选**：勾选型下拉、带各来源条数，DSH 自家格式固定排在最后并加分割线。
+- **四态状态点**：灰未导入 / 绿已导入 / 橙源有新内容 / 紫已归档，可按状态筛选。
+- **多字段排序**：时间、创建时间、名称、来源，可切升降序。
+- **删除不留墓碑**：删除导入的会话不再写永久墓碑，下次扫描回到「未导入」，可以重新导入。
+- **归档即紫点**：归档（而不是删除）才是墓碑代表的语义；点导入会自动取消归档，工作区被删时顺手重建。
+- **修复**：面板流式分块在新增字段后可能漏掉条目（改为快照交付）；Codex 非压缩件预览返回 500。
+
+<h3 id="en-0.27.0">New Features</h3>
+
+- **Based on upstream `0.26.3`**: this is the fork's first release; everything below is relative to upstream.
+
+- **Codex compressed rollouts**: reads `.zst` (upstream only read uncompressed `.jsonl`); 189 of 212 rollouts on the author's machine are compressed.
+- **Imported sessions are read-only**: the composer is locked via DSH's `conversation.blocks`, and the placeholder names the source and date. Continuing goes through a native fork.
+- **Multi-select source filter**: checkbox dropdown with per-source counts; DSH's own formats are pinned last behind a divider.
+- **Four-state status dots**: grey not imported / green imported / orange source has updates / purple archived, filterable.
+- **Multi-field sorting**: last active, created, title, source, with an ascending/descending toggle.
+- **Deleting leaves no tombstone**: deleting an imported session no longer writes a permanent tombstone; it returns to "not imported" on the next scan and can be re-imported.
+- **Archived means purple**: archiving (not deleting) is what the tombstone represents; clicking import un-archives it and recreates the workspace when needed.
+- **Fixes**: streamed panel chunks could drop entries after the new fields were added (now delivered from a snapshot); Codex preview returned 500 for uncompressed files.
+
+**Full Changelog**: [v0.26.3...v0.27.0](https://github.com/NuclearSnack/dsh-chat-114/compare/v0.26.3...v0.27.0)
 
 ## [Unreleased]
 
