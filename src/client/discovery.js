@@ -349,6 +349,17 @@
         background: hot ? colors.hover : "transparent",
         cursor: importing ? "default" : "pointer",
       };
+      // 导入状态三态：未导入（灰）/ 已导入（绿）/ 源有新内容（橙）。
+      // hasUpdate 由宿主侧比对 registry 指纹给出；字段缺席时退化成两态，不会误报。
+      const importStatus = s.importStatus;
+      const importedAlready = importStatus === "imported" || importStatus === "partial" || importStatus === "archived";
+      const statusKind = s.hasUpdate ? "updated" : importedAlready ? "imported" : "notImported";
+      const statusColor = statusKind === "updated" ? colors.warn
+        : statusKind === "imported" ? colors.success
+          : colors.dimmer;
+      const statusText = statusKind === "updated" ? "源有新内容（再导一次可增量追加）"
+        : statusKind === "imported" ? "已导入"
+          : "未导入";
       return h("div", {
         style: rowStyle,
         title: tip,
@@ -371,8 +382,31 @@
         onDragStart: importing ? undefined : (e) => props.onDragStart(e, s),
         onDragEnd: () => props.onDragEnd(),
       },
+        // ① 导入状态点：灰 / 绿 / 橙（三态见上方 statusKind）
+        h("span", {
+          style: {
+            width: "7px", height: "7px", borderRadius: "50%", flex: "none", marginRight: "6px",
+            background: statusColor,
+          },
+          title: statusText,
+          "aria-label": statusText,
+        }),
+        // ② 勾选框：独立于来源徽标。此前勾选态画在徽标上（overlay + 对勾），勾中后整块被
+        //    盖住、分不清是哪家 harness——所以两者必须分开画。这一块只是视觉，
+        //    点击仍由整行承担（冒泡到外层 role=checkbox）。
+        h("span", {
+          style: {
+            width: "14px", height: "14px", flex: "none", marginRight: "6px",
+            borderRadius: "3px",
+            border: "1px solid " + (checked ? colors.accent : colors.border),
+            background: checked ? colors.accent : "transparent",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: colors.accentForeground, fontSize: "10px", lineHeight: "10px",
+          },
+          "aria-hidden": true,
+        }, checked ? "✓" : ""),
         h(SourceBadge, {
-          format: s.format, checked, disabled: importing, size: 22,
+          format: s.format, checked: false, disabled: importing, size: 22,
           title: label,
           palette: { border: colors.border, accent: colors.accent, text: colors.text, overlay: badgeOverlay },
         }),
@@ -408,6 +442,48 @@
     /** 一个工作区分组：组头（点击折叠 / 展开）+ 窗口化的会话行（区间见 windowRange）。组头与
      *  皮肤一致——悬停（或组内有行点亮：groupLit）时文字变亮并露出折叠箭头，不浮背景矩形
      *  （它是标题不是目标）；组头自己的悬停是本组件的局部状态，不惊动整个面板。 */
+    /** 来源多选条：每个 harness 一个勾选框 + 该 harness 下的对话数，按数量降序。
+     *  只列当前扫描结果里真实出现过的来源（没数据的 harness 不占位置）。
+     *  单独占一行：和动作按钮挤在工具栏里会互相吃宽度。 */
+    function FormatFilterBar(props) {
+      const { t, formatOptions, formatFilters, onToggleFormat, importing } = props;
+      if (!formatOptions || formatOptions.length === 0) return null;
+      return h("div", {
+        style: {
+          display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px",
+          padding: "0 10px 6px",
+        },
+      },
+        h("span", { style: { color: COLORS.dimmer, fontSize: "11px", marginRight: "2px" } }, t("filter.format")),
+        formatOptions.map((o) => {
+          const on = formatFilters.has(o.key);
+          return h("button", {
+            key: o.key,
+            type: "button",
+            disabled: importing,
+            onClick: () => onToggleFormat(o.key),
+            title: (on ? "取消勾选 " : "勾选 ") + sourceLabel(o.key) + "（" + o.count + " 条）",
+            style: {
+              display: "inline-flex", alignItems: "center", gap: "4px",
+              padding: "2px 8px", borderRadius: "999px", cursor: importing ? "default" : "pointer",
+              fontSize: "11px", lineHeight: "16px",
+              border: "1px solid " + (on ? COLORS.accent : COLORS.border),
+              background: on ? COLORS.accent : "transparent",
+              color: on ? COLORS.accentForeground : COLORS.dim,
+            },
+          },
+            h("span", {
+              style: {
+                width: "10px", height: "10px", borderRadius: "2px",
+                border: "1px solid currentColor", display: "inline-block",
+                textAlign: "center", lineHeight: "9px", fontSize: "9px",
+              },
+            }, on ? "✓" : ""),
+            sourceLabel(o.key),
+            h("span", { style: { opacity: 0.7 } }, "(" + o.count + ")"));
+        }));
+    }
+
     function SessionGroup(props) {
       const { entry, win, t, importing, selected, badgeOverlay, isCollapsed, hotKey, groupLit, onCollapse, onToggle, onImport, onHot } = props;
       const { terms, hits, tools } = props;
@@ -482,7 +558,7 @@
     function DiscoveryToolbar(props) {
       const { t, narrow, importing, allSelected, hasSelection, canSelectAll, hasItems, onToggleAll, onClearSelection, onRefresh } = props;
       const { workspaceFilter, workspaceOptions, onWorkspaceFilter, timeFilter, onTimeFilter } = props;
-      const { formatFilter, formatOptions, onFormatFilter, sortKey, sortDesc, onSortKey, onToggleSortDesc } = props;
+      const { sortKey, sortDesc, onSortKey, onToggleSortDesc } = props;
       const style = STYLES;
       const [toolsRef, toolsWidth] = useContainerWidth();
       const [toolsProbeRef, toolsNeed] = useContainerWidth();
@@ -539,20 +615,6 @@
             disabled: !hasItems || importing,
             options: TIME_FILTERS.map((v) => ({ value: v, label: t("filter.time." + (v || "all")) })),
             onChange: onTimeFilter,
-          })),
-        // 「筛选：来源」：只列当前结果里真实出现过的 harness（不列硬编码的 33 种空档），
-        // 选项后带条数，方便一眼看出哪个来源数据多。
-        h("span", { style: style.filterGroup },
-          h(SearchableSelect, {
-            value: formatFilter, title: t("filter.format"), colors: COLORS,
-            searchable: false,
-            triggerLabel: formatFilter
-              ? t("filter.format") + " · " + sourceLabel(formatFilter)
-              : t("filter.format"),
-            disabled: !hasItems || importing || formatOptions.length === 0,
-            options: [{ value: "", label: t("filter.all") }].concat(
-              formatOptions.map((o) => ({ value: o.key, label: sourceLabel(o.key) + " (" + o.count + ")" }))),
-            onChange: onFormatFilter,
           })),
         // 排序：先选字段，再用右侧方向按钮切升降序；相等项按原始顺序回退，
         // 所以来回点两次一定回到原顺序（不漂移）。
@@ -632,7 +694,15 @@
       const [target, setTarget] = useState("");
       const [workspaceFilter, setWorkspaceFilter] = useState("");
       const [timeFilter, setTimeFilter] = useState(TIME_FILTERS[0]); // '' = 不筛选
-      const [formatFilter, setFormatFilter] = useState(""); // '' = 全部来源
+      const [formatFilters, setFormatFilters] = useState(() => new Set()); // 空集 = 不限来源（多选）
+      const toggleFormat = useCallback((key) => {
+        setFormatFilters((prev) => {
+          const next = new Set(prev);
+          if (next.has(key)) next.delete(key); else next.add(key);
+          return next;
+        });
+        setPage(0);
+      }, []);
       const [sortKey, setSortKey] = useState(SORT_KEYS[0]); // active = 最后活跃时间
       const [sortDesc, setSortDesc] = useState(true); // 默认降序（最近的在最前）
       const [selected, setSelected] = useState(new Map()); // key → 会话条目
@@ -666,7 +736,7 @@
       useEffect(() => { if (listEl) listEl.scrollTop = 0; }, [listEl, page, pageSize]);
       // 来源/搜索词/工作区变化 → 清空跨页选择（换页/刷新保留选择，支持跨页多选）。
       // 排序变化不清选择：只是行的先后变了，选中集合本身没变。
-      useEffect(() => { setSelected(new Map()); }, [source, query, workspaceFilter, timeFilter, formatFilter]);
+      useEffect(() => { setSelected(new Map()); }, [source, query, workspaceFilter, timeFilter, formatFilters]);
 
       // 显式选了 DSH 来源与 DSH 目标且**代次不同**（V3 ↔ V4）→ 底部多一个「导入所选并
       // 归档旧会话」按钮：导入按目标代次建新会话，同时把源会话在宿主里归档（迁移的收尾）。
@@ -792,10 +862,10 @@
       const contentHits = contentMode && contentText ? search.hits : null;
       const filteredItems = useMemo(() => {
         const base = filterByTime(
-          filterByFormat(filterByWorkspace(items, workspaceFilter), formatFilter),
+          filterByFormat(filterByWorkspace(items, workspaceFilter), formatFilters),
           timeFilter, Date.now());
         return contentHits ? base.filter((s) => contentHits.has(itemKey(s))) : base;
-      }, [items, workspaceFilter, formatFilter, timeFilter, contentHits]);
+      }, [items, workspaceFilter, formatFilters, timeFilter, contentHits]);
       const allRows = pageSize === ALL_PAGE_SIZE;
       const totalPages = allRows ? 1 : Math.max(1, Math.ceil(filteredItems.length / pageSize));
       // 当前页窗口 = 工作区筛选后的缓冲切片（服务端不再分页；翻页零重扫）；「全部」档不分页
@@ -911,11 +981,13 @@
             onWorkspaceFilter: (v) => { setWorkspaceFilter(v); setPage(0); },
             timeFilter,
             onTimeFilter: (v) => { setTimeFilter(v); setPage(0); },
-            formatFilter, formatOptions,
-            onFormatFilter: (v) => { setFormatFilter(v); setPage(0); },
             sortKey, sortDesc,
             onSortKey: (v) => { setSortKey(v); setPage(0); },
             onToggleSortDesc: () => setSortDesc((d) => !d),
+          }),
+          h(FormatFilterBar, {
+            t, importing, formatOptions, formatFilters,
+            onToggleFormat: toggleFormat,
           }),
           // 还没拿到第一批数据：居中显示连接提示（拿到数据后状态就交给底部那条）
           !stream.started && !error && h("div", { style: style.status }, t("scan.hint.start")),
