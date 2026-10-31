@@ -60,37 +60,18 @@ Restart DSH afterwards — an "Import sessions" entry shows up in the right side
 **Do not install this alongside the original `dsh-chat-import`.** Both register the same panel slots and the same plugin entry, so they will almost certainly collide.
 
 ## 使用 · Usage
-### 导入 · Import
-1. 打开右侧栏「导入会话」，面板会自动扫描本机数据源。
-2. 用顶部四个控件收窄范围：**路径**（工作区）、**时间**、**来源**（可多选，带各来源条数）、**排序**。
-3. 每行最左边有个状态点：灰=未导入、绿=已导入、橙=源里有新内容、紫=已归档。
-4. 勾选要的行（点整行即可，也支持全选），点底部导入。
 
-导入时**按工作区路径自动归组**：源对话原来在哪个目录下，就落进 DSH 里同名的工作区；没有对应工作区就新建一个。
+**导入**：打开右侧栏「导入会话」，面板会自动扫描本机数据源。用顶部四个控件收窄范围——**路径**（工作区）、**时间**、**来源**（可多选，带各来源条数）、**排序**；每行最左边有个状态点，灰=未导入、绿=已导入、橙=源里有新内容、紫=已归档。勾选要的行（点整行即可，也支持全选），点底部导入。导入时**按工作区路径自动归组**：源对话原来在哪个目录下，就落进 DSH 里同名的工作区；没有对应工作区就新建一个。
 
-1. Open "Import sessions" in the right sidebar; it scans your local data sources automatically.
-2. Narrow things down with the four controls up top: **path** (workspace), **time**, **source** (multi-select, with per-source counts), and **sort**.
-3. Each row has a status dot on the far left: grey = not imported, green = imported, orange = the source has new content, purple = archived.
-4. Tick the rows you want (clicking anywhere on a row works, and there's select-all), then hit Import at the bottom.
+**导入之后**：会话是**只读**的，输入框会锁住，灰色占位文字写着「此对话来源于 <来源>·<日期>」。想接着聊，点输入框上方横幅的**「分叉后继续对话」**（等同 DSH 原生的「分叉会话」），DSH 会新建一个会话供你正常对话，原对话保持只读。
 
-Imports are **grouped by workspace path**: a conversation lands in the DSH workspace with the same directory, and a new workspace is created if there isn't one.
+**删除与归档**：删除导入的会话不会留任何记录，下次扫描它回到「未导入」，想重导随时可以。归档的会话显示紫点，点它的导入按钮会先取消归档、再走导入，所以看到紫点不用担心；如果它原来挂的工作区被删了，导入时还会顺手把工作区重建出来。
 
-### 导入之后 · After import
-导入的会话是**只读**的。输入框会锁住，灰色占位文字写着「此对话来源于 <来源>·<日期>」。
+**Import**: Open "Import sessions" in the right sidebar; it scans your local data sources automatically. Narrow things down with the four controls up top — **path** (workspace), **time**, **source** (multi-select, with per-source counts), and **sort**. Each row has a status dot on the far left: grey = not imported, green = imported, orange = the source has new content, purple = archived. Tick the rows you want (clicking anywhere on a row works, and there's select-all), then hit Import at the bottom. Imports are **grouped by workspace path**: a conversation lands in the DSH workspace with the same directory, and a new workspace is created if there isn't one.
 
-想接着聊，点输入框上方横幅的**「分叉后继续对话」**（等同 DSH 原生的「分叉会话」）。DSH 会新建一个会话，那里可以正常对话，原对话保持只读。
+**After import**: The session is **read-only** — the input box is locked and the grey placeholder shows where it came from and when. To continue, click **"分叉后继续对话"** on the banner above the input box (same as DSH's native "fork session"); DSH opens a new conversation you can type in normally, while the original stays read-only.
 
-Imported sessions are **read-only**. The input box is locked, and the grey placeholder shows where the conversation came from and when.
-
-To continue, click **"分叉后继续对话"** on the banner above the input box — same thing as DSH's native "fork session". DSH opens a new conversation you can type in normally, while the original stays read-only.
-
-### 删除与归档 · Delete & archive
-- **删除**导入的会话不会留任何记录。下次扫描它回到「未导入」，想重导随时可以。
-- **归档**的会话显示紫点。点它的导入按钮会先取消归档、再走导入，所以看到紫点不用担心。如果它原来挂的工作区被删了，导入时还会顺手把工作区重建出来。
-
-**Deleting** an imported session leaves no trace. It shows up as "not imported" on the next scan, so you can re-import it anytime.
-
-**Archived** sessions show a purple dot. Clicking their import button un-archives them first, then imports — so there's nothing to worry about. If the workspace they belonged to was deleted, it gets recreated along the way.
+**Delete and archive**: Deleting an imported session leaves no trace — it shows up as "not imported" on the next scan, so you can re-import it anytime. Archived sessions show a purple dot; clicking their import button un-archives them first, so there's nothing to worry about. If the workspace they belonged to was deleted, it gets recreated along the way.
 
 ## 支持的数据源 · Supported sources
 > 支持的数据源直接粘贴原仓库的数据源表格。另对CodeX和ZCode数据源进行了一些调整。
